@@ -1,20 +1,26 @@
 package pe.tecsup.examplanner.ui.home
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import pe.tecsup.examplanner.data.models.Tarea
+import java.util.Calendar
+import java.util.Locale
 
 // ── Dialog para conectar Canvas ───────────────────────────────────────────────
 
@@ -39,7 +45,6 @@ fun CanvasDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Instrucciones para obtener el token
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
                     shape = RoundedCornerShape(8.dp)
@@ -81,7 +86,6 @@ fun CanvasDialog(
                     maxLines = 4
                 )
 
-                // CA2: mensaje si Canvas no se pudo conectar
                 AnimatedVisibility(visible = !mensaje.isNullOrBlank()) {
                     Text(
                         text = mensaje ?: "",
@@ -118,25 +122,64 @@ fun CanvasDialog(
     )
 }
 
-// ── Dialog para agregar tarea manual ─────────────────────────────────────────
+// ── Dialog para agregar O editar tarea manual ─────────────────────────────────
 
 @Composable
 fun AddTareaDialog(
+    tareaInicial: Tarea? = null,
     onAdd: (String, String, String, String?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var nombre by remember { mutableStateOf("") }
-    var curso by remember { mutableStateOf("") }
-    var fecha by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
+    val modoEdicion = tareaInicial != null
+
+    var nombre by remember { mutableStateOf(tareaInicial?.nombre ?: "") }
+    var curso  by remember { mutableStateOf(tareaInicial?.curso  ?: "") }
+    var fecha  by remember { mutableStateOf(
+        tareaInicial?.fechaLimite
+            ?.removeSuffix("-05:00")
+            ?.replace("T", " ")
+            ?.take(16)
+            ?: ""
+    ) }
+    var descripcion by remember { mutableStateOf(tareaInicial?.descripcion ?: "") }
     var error by remember { mutableStateOf("") }
+
+    // --- CONFIGURACIÓN DE CALENDARIO E HORA (INTUITIVO) ---
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val timePickerDialog = TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            val horaFormat = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+            val soloFecha = if (fecha.contains(" ")) fecha.substringBefore(" ") else fecha
+            fecha = "$soloFecha $horaFormat"
+        },
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        true
+    )
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val mesFormat = String.format(Locale.getDefault(), "%02d", month + 1)
+            val diaFormat = String.format(Locale.getDefault(), "%02d", dayOfMonth)
+            fecha = "$year-$mesFormat-$diaFormat "
+            timePickerDialog.show() // Abre el reloj apenas se elige el día
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+    // ------------------------------------------------------
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(16.dp),
         title = {
             Text(
-                text = "➕ Agregar tarea",
+                text = if (modoEdicion) "✏ Editar tarea" else "➕ Agregar tarea",
                 fontWeight = FontWeight.Bold
             )
         },
@@ -159,16 +202,23 @@ fun AddTareaDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
+
+                // CAMBIO AQUÍ: Campo de fecha de solo lectura con botón de calendario
                 OutlinedTextField(
                     value = fecha,
-                    onValueChange = { fecha = it },
-                    label = { Text("Fecha límite * (YYYY-MM-DD HH:MM)") },
-                    placeholder = { Text("2026-05-30 23:59") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                    onValueChange = { },
+                    readOnly = true, // Bloquea escritura manual
+                    label = { Text("Fecha límite *") },
+                    placeholder = { Text("Toca el calendario ➔") },
+                    trailingIcon = {
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha", tint = Color(0xFF1565C0))
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
+
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
@@ -188,7 +238,6 @@ fun AddTareaDialog(
                     if (nombre.isBlank() || curso.isBlank() || fecha.isBlank()) {
                         error = "Nombre, curso y fecha son obligatorios"
                     } else {
-                        // Agregar zona horaria si no la tiene
                         val fechaFormateada = if (!fecha.contains("T") && !fecha.contains("+")) {
                             "${fecha.trim()}:00-05:00"
                         } else fecha
@@ -198,7 +247,7 @@ fun AddTareaDialog(
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0))
             ) {
-                Text("Agregar")
+                Text(if (modoEdicion) "Guardar" else "Agregar")
             }
         },
         dismissButton = {
@@ -221,6 +270,36 @@ fun AddExamenDialog(
     var descripcion by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
 
+    // --- CONFIGURACIÓN DE CALENDARIO E HORA (INTUITIVO) ---
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val timePickerDialog = TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            val horaFormat = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+            val soloFecha = if (fecha.contains(" ")) fecha.substringBefore(" ") else fecha
+            fecha = "$soloFecha $horaFormat"
+        },
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        true
+    )
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val mesFormat = String.format(Locale.getDefault(), "%02d", month + 1)
+            val diaFormat = String.format(Locale.getDefault(), "%02d", dayOfMonth)
+            fecha = "$year-$mesFormat-$diaFormat "
+            timePickerDialog.show() // Abre el reloj apenas se elige el día
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+    // ------------------------------------------------------
+
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(16.dp),
@@ -241,16 +320,23 @@ fun AddExamenDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
+
+                // CAMBIO AQUÍ: Campo de fecha de solo lectura con botón de calendario
                 OutlinedTextField(
                     value = fecha,
-                    onValueChange = { fecha = it },
-                    label = { Text("Fecha del examen * (YYYY-MM-DD HH:MM)") },
-                    placeholder = { Text("2026-05-28 09:00") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                    onValueChange = { },
+                    readOnly = true, // Bloquea escritura manual
+                    label = { Text("Fecha del examen *") },
+                    placeholder = { Text("Toca el calendario ➔") },
+                    trailingIcon = {
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha", tint = Color(0xFFE53935))
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
+
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
@@ -260,7 +346,6 @@ fun AddExamenDialog(
                     maxLines = 3
                 )
 
-                // Advertencia si la fecha es hoy (CA2 del backend)
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
                     shape = RoundedCornerShape(8.dp)

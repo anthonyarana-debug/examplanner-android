@@ -150,6 +150,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun editarTarea(id: Int, nombre: String, curso: String, fechaLimite: String, descripcion: String?) {
+        if (nombre.isBlank() || curso.isBlank() || fechaLimite.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Completa nombre, curso y fecha")
+            return
+        }
+        viewModelScope.launch {
+            when (val result = repo.editarTarea(id, nombre, curso, fechaLimite, descripcion)) {
+                is Result.Success -> {
+                    _uiState.value = _uiState.value.copy(accionExitosa = "Tarea actualizada")
+                    cargarPendientes()
+                }
+                is Result.Error -> _uiState.value = _uiState.value.copy(error = result.message)
+            }
+        }
+    }
+
     fun limpiarMensajes() {
         _uiState.value = _uiState.value.copy(
             error = null,

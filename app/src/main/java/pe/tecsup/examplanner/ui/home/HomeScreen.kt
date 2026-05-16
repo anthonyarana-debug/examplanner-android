@@ -36,9 +36,9 @@ fun HomeScreen(
     var showCanvasDialog by remember { mutableStateOf(false) }
     var showAddTareaDialog by remember { mutableStateOf(false) }
     var showAddExamenDialog by remember { mutableStateOf(false) }
+    var tareaAEditar by remember { mutableStateOf<Tarea?>(null) }   // ← NUEVO
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    // Snackbar para mensajes de éxito/error
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(uiState.accionExitosa) {
         uiState.accionExitosa?.let {
@@ -71,7 +71,6 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    // Botón Canvas
                     IconButton(onClick = {
                         if (canvasConectado) viewModel.sincronizarCanvas()
                         else showCanvasDialog = true
@@ -119,7 +118,6 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Banner Canvas desconectado
             AnimatedVisibility(visible = !canvasConectado) {
                 Card(
                     modifier = Modifier
@@ -152,7 +150,6 @@ fun HomeScreen(
                 }
             }
 
-            // Barra de progreso
             uiState.pendientes?.let { data ->
                 ProgressCard(
                     progreso = data.progresoPorcentaje.toFloat(),
@@ -161,7 +158,6 @@ fun HomeScreen(
                 )
             }
 
-            // Tabs Tareas / Exámenes
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.White,
@@ -185,7 +181,6 @@ fun HomeScreen(
                 )
             }
 
-            // Contenido
             if (uiState.isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Color(0xFF1565C0))
@@ -196,7 +191,8 @@ fun HomeScreen(
                         tareas = uiState.pendientes?.tareas ?: emptyList(),
                         mensaje = uiState.pendientes?.mensaje,
                         onCompletar = { id, completada -> viewModel.marcarCompletada(id, completada) },
-                        onEliminar = { id -> viewModel.eliminarTarea(id) }
+                        onEliminar = { id -> viewModel.eliminarTarea(id) },
+                        onEditar = { tarea -> tareaAEditar = tarea }   // ← NUEVO
                     )
                     1 -> ExamenesTab(
                         examenes = uiState.pendientes?.examenes ?: emptyList(),
@@ -207,7 +203,8 @@ fun HomeScreen(
         }
     }
 
-    // Dialogs
+    // ── Dialogs ───────────────────────────────────────────────────────────────
+
     if (showCanvasDialog) {
         CanvasDialog(
             onConnect = { token ->
@@ -237,6 +234,18 @@ fun HomeScreen(
                 showAddExamenDialog = false
             },
             onDismiss = { showAddExamenDialog = false }
+        )
+    }
+
+    // Dialog de edición — reutiliza AddTareaDialog con datos precargados   ← NUEVO
+    tareaAEditar?.let { tarea ->
+        AddTareaDialog(
+            tareaInicial = tarea,
+            onAdd = { nombre, curso, fecha, desc ->
+                viewModel.editarTarea(tarea.id, nombre, curso, fecha, desc)
+                tareaAEditar = null
+            },
+            onDismiss = { tareaAEditar = null }
         )
     }
 }
@@ -296,7 +305,8 @@ fun TareasTab(
     tareas: List<Tarea>,
     mensaje: String?,
     onCompletar: (Int, Boolean) -> Unit,
-    onEliminar: (Int) -> Unit
+    onEliminar: (Int) -> Unit,
+    onEditar: (Tarea) -> Unit      // ← NUEVO
 ) {
     if (tareas.isEmpty()) {
         EmptyState(
@@ -314,7 +324,8 @@ fun TareasTab(
                 TareaCard(
                     tarea = tarea,
                     onCompletar = { onCompletar(tarea.id, true) },
-                    onEliminar = { onEliminar(tarea.id) }
+                    onEliminar = { onEliminar(tarea.id) },
+                    onEditar = { onEditar(tarea) }    // ← NUEVO
                 )
             }
         }
@@ -325,7 +336,8 @@ fun TareasTab(
 fun TareaCard(
     tarea: Tarea,
     onCompletar: () -> Unit,
-    onEliminar: () -> Unit
+    onEliminar: () -> Unit,
+    onEditar: () -> Unit           // ← NUEVO
 ) {
     val urgente = tarea.diasRestantes <= 1
     val pronto = tarea.diasRestantes in 2..3
@@ -346,7 +358,6 @@ fun TareaCard(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Checkbox CA1: marcar completada
             Checkbox(
                 checked = tarea.completada,
                 onCheckedChange = { if (!tarea.completada) onCompletar() },
@@ -354,7 +365,9 @@ fun TareaCard(
             )
 
             Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
             ) {
                 Text(
                     text = tarea.nombre,
@@ -372,7 +385,6 @@ fun TareaCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Badge de urgencia
                     val (badgeColor, badgeText) = when {
                         tarea.estaVencida -> Color(0xFFC62828) to "⚠ Vencida"
                         urgente           -> Color(0xFFE53935) to "⚡ Hoy"
@@ -391,7 +403,6 @@ fun TareaCard(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
-                    // Badge origen
                     if (tarea.origen == "canvas") {
                         Surface(
                             color = Color(0xFF1565C0).copy(alpha = 0.1f),
@@ -408,8 +419,16 @@ fun TareaCard(
                 }
             }
 
-            // Botón eliminar (solo tareas manuales)
+            // Botones editar y eliminar — solo tareas manuales   ← NUEVO
             if (tarea.origen == "manual") {
+                IconButton(onClick = onEditar) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Editar",
+                        tint = Color(0xFF1565C0),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 IconButton(onClick = onEliminar) {
                     Icon(
                         Icons.Default.Delete,
@@ -475,7 +494,11 @@ fun ExamenCard(examen: Examen) {
                 )
             }
 
-            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .weight(1f)
+            ) {
                 Text(
                     text = "Examen: ${examen.curso}",
                     fontWeight = FontWeight.Bold,

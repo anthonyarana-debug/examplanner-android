@@ -198,4 +198,21 @@ class ExamPlannerRepository(private val context: Context) {
             Result.Error("Sin conexión al servidor.")
         }
     }
+
+    suspend fun editarTarea(
+        id: Int, nombre: String, curso: String, fechaLimite: String, descripcion: String?
+    ): Result<Tarea> {
+        return try {
+            val response = api.editarTarea(
+                id, TareaCreateRequest(nombre, curso, fechaLimite, descripcion)
+            )
+            if (response.isSuccessful) {
+                Result.Success(response.body()!!)
+            } else {
+                Result.Error("Error al editar la tarea.")
+            }
+        } catch (e: Exception) {
+            Result.Error("Sin conexión al servidor.")
+        }
+    }
 }
