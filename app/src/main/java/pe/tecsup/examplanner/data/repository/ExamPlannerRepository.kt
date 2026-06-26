@@ -2,11 +2,13 @@ package pe.tecsup.examplanner.data.repository
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import pe.tecsup.examplanner.data.api.RetrofitClient
 import pe.tecsup.examplanner.data.api.dataStore
 import pe.tecsup.examplanner.data.models.*
+import retrofit2.Response
 
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
@@ -17,6 +19,29 @@ class ExamPlannerRepository(private val context: Context) {
 
     private val api = RetrofitClient.api
     private val dataStore = context.dataStore
+    private val gson = Gson()
+
+    /**
+     * Lee el mensaje de error REAL que envía el backend, en vez de mostrar
+     * un texto fijo. Soporta los dos formatos del backend:
+     *   {"errores": {"email": ["Ya existe Estudiante con este email."]}}
+     *   {"error": "mensaje suelto"}
+     */
+    private fun <T> parseError(response: Response<T>, fallback: String): String {
+        return try {
+            val raw = response.errorBody()?.string()
+            if (raw.isNullOrBlank()) return fallback
+            val err = gson.fromJson(raw, ErrorResponse::class.java)
+            when {
+                !err.errores.isNullOrEmpty() ->
+                    err.errores.values.firstOrNull()?.firstOrNull() ?: fallback
+                !err.error.isNullOrBlank() -> err.error!!
+                else -> fallback
+            }
+        } catch (e: Exception) {
+            fallback
+        }
+    }
 
     // ── SESSION ──────────────────────────────────────────────────────────────
 
@@ -63,11 +88,9 @@ class ExamPlannerRepository(private val context: Context) {
                 guardarSesion(body)
                 Result.Success(body)
             } else {
-                val msg = when (response.code()) {
-                    400 -> "Solo se permiten correos institucionales (@tecsup.edu.pe)"
-                    else -> "Error al registrarse. Intenta de nuevo."
-                }
-                Result.Error(msg)
+                // Muestra el mensaje real del backend (correo ya existe,
+                // dominio inválido, contraseña corta, etc.)
+                Result.Error(parseError(response, "No se pudo crear la cuenta."))
             }
         } catch (e: Exception) {
             Result.Error("Sin conexión al servidor. Verifica tu internet.")
@@ -81,8 +104,10 @@ class ExamPlannerRepository(private val context: Context) {
                 val body = response.body()!!
                 guardarSesion(body)
                 Result.Success(body)
-            } else {
+            } else if (response.code() == 401) {
                 Result.Error("Usuario o contraseña incorrectos")
+            } else {
+                Result.Error(parseError(response, "No se pudo iniciar sesión."))
             }
         } catch (e: Exception) {
             Result.Error("Sin conexión al servidor. Verifica tu internet.")

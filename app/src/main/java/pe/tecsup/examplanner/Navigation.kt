@@ -13,7 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,10 +20,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import pe.tecsup.examplanner.data.api.RetrofitClient
 import pe.tecsup.examplanner.data.api.dataStore
+import pe.tecsup.examplanner.data.repository.ExamPlannerRepository
 import pe.tecsup.examplanner.ui.auth.LoginScreen
 import pe.tecsup.examplanner.ui.auth.RegistroScreen
-import pe.tecsup.examplanner.ui.home.HomeScreen
-import pe.tecsup.examplanner.ui.home.HomeViewModel
+import pe.tecsup.examplanner.ui.main.MainShell
 
 object Routes {
     const val LOGIN = "login"
@@ -47,7 +46,7 @@ fun ExamPlannerApp() {
         startDestination = if (!token.isNullOrBlank()) Routes.HOME else Routes.LOGIN
     }
 
-    // Splash screen mientras lee el token
+    // Splash mientras lee el token
     if (startDestination == null) {
         Box(
             modifier = Modifier
@@ -98,9 +97,7 @@ fun ExamPlannerApp() {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
-                onGoToRegistro = {
-                    navController.navigate(Routes.REGISTRO)
-                }
+                onGoToRegistro = { navController.navigate(Routes.REGISTRO) }
             )
         }
 
@@ -111,22 +108,17 @@ fun ExamPlannerApp() {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
-                onGoToLogin = {
-                    navController.popBackStack()
-                }
+                onGoToLogin = { navController.popBackStack() }
             )
         }
 
         composable(Routes.HOME) {
-            val homeViewModel: HomeViewModel = viewModel()
-            HomeScreen(
-                viewModel = homeViewModel,
+            MainShell(
                 onLogout = {
                     scope.launch {
-                        dataStore.data.first().let { prefs ->
-                            val refreshToken = prefs[RetrofitClient.REFRESH_KEY] ?: ""
-                            homeViewModel.logout(refreshToken)
-                        }
+                        val prefs = dataStore.data.first()
+                        val refreshToken = prefs[RetrofitClient.REFRESH_KEY] ?: ""
+                        ExamPlannerRepository(context).cerrarSesion(refreshToken)
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(Routes.HOME) { inclusive = true }
                         }
