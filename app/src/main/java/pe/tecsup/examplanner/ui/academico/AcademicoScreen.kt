@@ -1,5 +1,8 @@
 package pe.tecsup.examplanner.ui.academico
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -188,40 +192,100 @@ private fun MaterialesTab(ui: AcademicoUiState) {
         ui.errorMateriales != null -> EstadoVacio("📚", "Materiales no disponibles", ui.errorMateriales)
         ui.materiales.isEmpty() -> EstadoVacio("📚", "Sin materiales", "No hay módulos publicados.")
         else -> {
-            val uri = LocalUriHandler.current
             LazyColumn(
                 Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(ui.materiales) { curso ->
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Column(Modifier.padding(14.dp)) {
-                            Text(curso.curso, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Azul)
-                            curso.modulos.forEach { modulo ->
-                                Spacer(Modifier.height(8.dp))
-                                Text(modulo.nombre, fontWeight = FontWeight.SemiBold,
-                                    fontSize = 13.sp, color = Color(0xFF424242))
-                                modulo.items.forEach { item ->
-                                    Row(
-                                        Modifier.fillMaxWidth()
-                                            .clickable { item.url?.let { uri.openUri(it) } }
-                                            .padding(vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(iconoTipo(item.tipo), fontSize = 16.sp)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(item.titulo, fontSize = 13.sp, color = Color(0xFF616161),
-                                            modifier = Modifier.weight(1f))
-                                        Icon(Icons.Default.OpenInNew, null,
-                                            tint = Color(0xFFBDBDBD), modifier = Modifier.size(16.dp))
-                                    }
-                                }
+                    CursoMaterialCard(curso)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CursoMaterialCard(curso: CursoMateriales) {
+    val uri = LocalUriHandler.current
+    var expandido by remember { mutableStateOf(false) }
+    val rotacion by animateFloatAsState(if (expandido) 180f else 0f, label = "rot")
+
+    // Contar items totales del curso para mostrar en el resumen
+    val totalItems = curso.modulos.sumOf { it.items.size }
+
+    Card(
+        Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column {
+            // Cabecera clickable
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { expandido = !expandido }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Azul.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("📚", fontSize = 18.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(curso.curso, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Azul)
+                    Text(
+                        "${curso.modulos.size} semanas · $totalItems recursos",
+                        fontSize = 12.sp, color = Color(0xFF9E9E9E)
+                    )
+                }
+                Icon(
+                    Icons.Default.ExpandMore,
+                    contentDescription = if (expandido) "Contraer" else "Expandir",
+                    tint = Azul,
+                    modifier = Modifier.rotate(rotacion)
+                )
+            }
+
+            // Contenido colapsable
+            AnimatedVisibility(visible = expandido) {
+                Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
+                    curso.modulos.forEach { modulo ->
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            modulo.nombre,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF424242),
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                        modulo.items.forEach { item ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { item.url?.let { uri.openUri(it) } }
+                                    .padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(iconoTipo(item.tipo), fontSize = 16.sp)
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    item.titulo, fontSize = 13.sp, color = Color(0xFF616161),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    Icons.Default.OpenInNew, null,
+                                    tint = Color(0xFFBDBDBD), modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                     }
