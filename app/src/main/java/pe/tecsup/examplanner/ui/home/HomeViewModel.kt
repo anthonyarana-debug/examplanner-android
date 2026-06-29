@@ -10,6 +10,7 @@ import pe.tecsup.examplanner.data.models.*
 import pe.tecsup.examplanner.data.repository.ExamPlannerRepository
 import pe.tecsup.examplanner.data.repository.Result
 import pe.tecsup.examplanner.notificaciones.NotificacionesHelper
+import pe.tecsup.examplanner.widget.WidgetData
 
 data class HomeUiState(
     val isLoading: Boolean = false,
@@ -46,6 +47,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     // Programar recordatorios locales automáticamente
                     try {
                         NotificacionesHelper.programarTodos(
+                            getApplication(),
+                            result.data.tareas,
+                            result.data.examenes
+                        )
+                    } catch (_: Exception) {
+                    }
+                    // Guardar datos para el widget de pantalla de inicio
+                    try {
+                        WidgetData.guardar(
                             getApplication(),
                             result.data.tareas,
                             result.data.examenes
