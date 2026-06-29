@@ -104,4 +104,8 @@ interface ExamPlannerApi {
 
     @POST("api/asistente/")
     suspend fun preguntarAsistente(@Body body: AsistenteRequest): Response<AsistenteResponse>
+    // ── REPASAR (material de estudio) ─────────────────────────────────────────
+
+    @POST("api/repasar/")
+    suspend fun repasar(@Body body: RepasoRequest): Response<RepasoResponse>
 }

@@ -37,6 +37,7 @@ fun HomeScreen(
     var showAddTareaDialog by remember { mutableStateOf(false) }
     var showAddExamenDialog by remember { mutableStateOf(false) }
     var tareaAEditar by remember { mutableStateOf<Tarea?>(null) }   // ← NUEVO
+    var repasoTema by remember { mutableStateOf<Pair<String, String>?>(null) }   // titulo, curso
     var selectedTab by remember { mutableIntStateOf(0) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -192,11 +193,13 @@ fun HomeScreen(
                         mensaje = uiState.pendientes?.mensaje,
                         onCompletar = { id, completada -> viewModel.marcarCompletada(id, completada) },
                         onEliminar = { id -> viewModel.eliminarTarea(id) },
-                        onEditar = { tarea -> tareaAEditar = tarea }   // ← NUEVO
+                        onEditar = { tarea -> tareaAEditar = tarea },   // ← NUEVO
+                        onRepasar = { titulo, curso -> repasoTema = titulo to curso }
                     )
                     1 -> ExamenesTab(
                         examenes = uiState.pendientes?.examenes ?: emptyList(),
-                        mensaje = uiState.pendientes?.mensaje
+                        mensaje = uiState.pendientes?.mensaje,
+                        onRepasar = { titulo, curso -> repasoTema = titulo to curso }
                     )
                 }
             }
@@ -246,6 +249,15 @@ fun HomeScreen(
                 tareaAEditar = null
             },
             onDismiss = { tareaAEditar = null }
+        )
+    }
+
+    // Dialog de Repaso (material de estudio por IA)
+    repasoTema?.let { (titulo, curso) ->
+        RepasoDialog(
+            titulo = titulo,
+            curso = curso,
+            onDismiss = { repasoTema = null }
         )
     }
 }
@@ -306,7 +318,8 @@ fun TareasTab(
     mensaje: String?,
     onCompletar: (Int, Boolean) -> Unit,
     onEliminar: (Int) -> Unit,
-    onEditar: (Tarea) -> Unit      // ← NUEVO
+    onEditar: (Tarea) -> Unit,      // ← NUEVO
+    onRepasar: (String, String) -> Unit
 ) {
     if (tareas.isEmpty()) {
         EmptyState(
@@ -325,7 +338,8 @@ fun TareasTab(
                     tarea = tarea,
                     onCompletar = { onCompletar(tarea.id, true) },
                     onEliminar = { onEliminar(tarea.id) },
-                    onEditar = { onEditar(tarea) }    // ← NUEVO
+                    onEditar = { onEditar(tarea) },    // ← NUEVO
+                    onRepasar = { onRepasar(tarea.nombre, tarea.curso) }
                 )
             }
         }
@@ -337,7 +351,8 @@ fun TareaCard(
     tarea: Tarea,
     onCompletar: () -> Unit,
     onEliminar: () -> Unit,
-    onEditar: () -> Unit           // ← NUEVO
+    onEditar: () -> Unit,           // ← NUEVO
+    onRepasar: () -> Unit
 ) {
     val urgente = tarea.diasRestantes <= 1
     val pronto = tarea.diasRestantes in 2..3
@@ -419,6 +434,16 @@ fun TareaCard(
                 }
             }
 
+            // Botón Repasar — para todas las tareas
+            IconButton(onClick = onRepasar) {
+                Icon(
+                    Icons.Default.MenuBook,
+                    contentDescription = "Repasar",
+                    tint = Color(0xFF1565C0),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
             // Botones editar y eliminar — solo tareas manuales   ← NUEVO
             if (tarea.origen == "manual") {
                 IconButton(onClick = onEditar) {
@@ -445,7 +470,11 @@ fun TareaCard(
 // ── Tab de Exámenes ───────────────────────────────────────────────────────────
 
 @Composable
-fun ExamenesTab(examenes: List<Examen>, mensaje: String?) {
+fun ExamenesTab(
+    examenes: List<Examen>,
+    mensaje: String?,
+    onRepasar: (String, String) -> Unit
+) {
     if (examenes.isEmpty()) {
         EmptyState(
             emoji = "📝",
@@ -459,14 +488,17 @@ fun ExamenesTab(examenes: List<Examen>, mensaje: String?) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(examenes, key = { it.id }) { examen ->
-                ExamenCard(examen = examen)
+                ExamenCard(
+                    examen = examen,
+                    onRepasar = { onRepasar(examen.descripcion?.takeIf { it.isNotBlank() } ?: "Examen de ${examen.curso}", examen.curso) }
+                )
             }
         }
     }
 }
 
 @Composable
-fun ExamenCard(examen: Examen) {
+fun ExamenCard(examen: Examen, onRepasar: () -> Unit) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
@@ -523,16 +555,27 @@ fun ExamenCard(examen: Examen) {
                 }
             }
 
-            if (examen.origen == "canvas") {
-                Surface(
-                    color = Color(0xFF1565C0).copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Text(
-                        text = "Canvas",
-                        color = Color(0xFF1565C0),
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            Column(horizontalAlignment = Alignment.End) {
+                if (examen.origen == "canvas") {
+                    Surface(
+                        color = Color(0xFF1565C0).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text(
+                            text = "Canvas",
+                            color = Color(0xFF1565C0),
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                }
+                IconButton(onClick = onRepasar) {
+                    Icon(
+                        Icons.Default.MenuBook,
+                        contentDescription = "Repasar",
+                        tint = Color(0xFF1565C0),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
