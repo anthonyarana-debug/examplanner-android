@@ -41,14 +41,17 @@ object WidgetData {
             editor.putBoolean("vacio", false)
             ordenados.forEachIndexed { i, item ->
                 val etiqueta = when {
-                    item.vencida -> "Vencida"
+                    item.vencida -> "⚠ Vencida"
                     item.dias == 0 -> "Hoy"
                     item.dias == 1 -> "Mañana"
-                    else -> "${item.dias} días"
+                    else -> "${item.dias}d"
                 }
-                // Recortar texto largo
-                val texto = if (item.texto.length > 32) item.texto.take(30) + "…" else item.texto
-                editor.putString("urgente_${i + 1}", "$texto · $etiqueta")
+                // Etiqueta de tiempo PRIMERO (siempre visible), luego el nombre recortado.
+                // El emoji ya viene en item.texto al inicio (📋 / 📝).
+                val emoji = item.texto.take(2)
+                val resto = item.texto.drop(2).trim()
+                val nombreCorto = if (resto.length > 24) resto.take(22) + "…" else resto
+                editor.putString("urgente_${i + 1}", "$emoji [$etiqueta] $nombreCorto")
             }
             // Limpiar las que sobren
             for (j in ordenados.size until 3) {
