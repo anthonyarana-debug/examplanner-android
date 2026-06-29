@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import pe.tecsup.examplanner.data.models.*
 import pe.tecsup.examplanner.data.repository.ExamPlannerRepository
 import pe.tecsup.examplanner.data.repository.Result
+import pe.tecsup.examplanner.notificaciones.NotificacionesHelper
 
 data class HomeUiState(
     val isLoading: Boolean = false,
@@ -37,10 +38,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             when (val result = repo.getPendientes()) {
-                is Result.Success -> _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    pendientes = result.data
-                )
+                is Result.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        pendientes = result.data
+                    )
+                    // Programar recordatorios locales automáticamente
+                    try {
+                        NotificacionesHelper.programarTodos(
+                            getApplication(),
+                            result.data.tareas,
+                            result.data.examenes
+                        )
+                    } catch (_: Exception) {
+                    }
+                }
                 is Result.Error -> _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = result.message
