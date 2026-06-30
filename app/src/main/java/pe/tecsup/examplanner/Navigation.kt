@@ -1,5 +1,14 @@
 package pe.tecsup.examplanner
 
+import kotlinx.coroutines.delay
+
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.ui.graphics.graphicsLayer
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,29 +52,50 @@ fun ExamPlannerApp() {
     LaunchedEffect(Unit) {
         val prefs = dataStore.data.first()
         val token = prefs[RetrofitClient.TOKEN_KEY]
+        // Mostrar el splash completo (mínimo 1.2s) aunque el token se lea al instante
+        delay(1200)
         startDestination = if (!token.isNullOrBlank()) Routes.HOME else Routes.LOGIN
     }
 
     // Splash mientras lee el token
     if (startDestination == null) {
+        // Animación de entrada: fade + escala suave del logo
+        val animVisible = remember { Animatable(0f) }
+        LaunchedEffect(Unit) {
+            animVisible.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing)
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF1565C0), Color(0xFF0D47A1))
+                        colors = listOf(Color(0xFF1976D2), Color(0xFF0D47A1))
                     )
                 ),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.graphicsLayer {
+                    alpha = animVisible.value
+                    val s = 0.85f + 0.15f * animVisible.value
+                    scaleX = s
+                    scaleY = s
+                }
             ) {
-                Text(text = "📚", fontSize = 72.sp)
+                // Logo real de la app (calendario + check)
+                Image(
+                    painter = painterResource(id = R.drawable.splash_logo),
+                    contentDescription = "ExamPlanner",
+                    modifier = Modifier.size(140.dp)
+                )
                 Text(
                     text = "ExamPlanner",
-                    fontSize = 30.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     letterSpacing = 1.sp
@@ -73,11 +103,11 @@ fun ExamPlannerApp() {
                 Text(
                     text = "Tecsup · Semana de exámenes bajo control",
                     fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.6f)
+                    color = Color.White.copy(alpha = 0.7f)
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(28.dp))
                 CircularProgressIndicator(
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = Color.White.copy(alpha = 0.8f),
                     strokeWidth = 2.dp,
                     modifier = Modifier.size(24.dp)
                 )

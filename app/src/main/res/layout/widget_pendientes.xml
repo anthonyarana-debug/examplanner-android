@@ -5,13 +5,14 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_fondo"
-    android:padding="14dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="8dp">
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
 
         <TextView
             android:layout_width="0dp"
@@ -21,6 +22,20 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"
             android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/widget_contador"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_chip"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="12sp" />
     </LinearLayout>
 
     <TextView
@@ -31,7 +46,7 @@
         android:textSize="13sp"
         android:maxLines="1"
         android:ellipsize="end"
-        android:layout_marginBottom="4dp"
+        android:layout_marginBottom="5dp"
         android:text="" />
 
     <TextView
@@ -42,7 +57,7 @@
         android:textSize="13sp"
         android:maxLines="1"
         android:ellipsize="end"
-        android:layout_marginBottom="4dp"
+        android:layout_marginBottom="5dp"
         android:text="" />
 
     <TextView
@@ -53,6 +68,15 @@
         android:textSize="13sp"
         android:maxLines="1"
         android:ellipsize="end"
+        android:layout_marginBottom="8dp"
         android:text="" />
+
+    <TextView
+        android:id="@+id/widget_pie"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Toca para abrir"
+        android:textColor="#99FFFFFF"
+        android:textSize="10sp" />
 
 </LinearLayout>

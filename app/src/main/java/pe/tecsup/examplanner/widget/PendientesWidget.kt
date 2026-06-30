@@ -40,15 +40,21 @@ class PendientesWidget : AppWidgetProvider() {
             val linea2 = prefs.getString("urgente_2", null)
             val linea3 = prefs.getString("urgente_3", null)
             val vacio = prefs.getBoolean("vacio", true)
+            val total = prefs.getInt("total", 0)
 
             if (vacio || linea1 == null) {
                 views.setTextViewText(R.id.widget_item1, "Sin pendientes 🎉")
-                views.setTextViewText(R.id.widget_item2, "")
+                views.setTextViewText(R.id.widget_item2, "Todo al día, ¡bien hecho!")
                 views.setTextViewText(R.id.widget_item3, "")
+                views.setTextViewText(R.id.widget_contador, "0")
+                views.setTextViewText(R.id.widget_pie, "Toca para abrir")
             } else {
                 views.setTextViewText(R.id.widget_item1, linea1)
                 views.setTextViewText(R.id.widget_item2, linea2 ?: "")
                 views.setTextViewText(R.id.widget_item3, linea3 ?: "")
+                views.setTextViewText(R.id.widget_contador, total.toString())
+                val masTexto = if (total > 3) "+${total - 3} más · Toca para abrir" else "Toca para abrir"
+                views.setTextViewText(R.id.widget_pie, masTexto)
             }
 
             // Al tocar el widget, abrir la app

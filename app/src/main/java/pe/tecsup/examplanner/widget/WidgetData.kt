@@ -24,6 +24,9 @@ object WidgetData {
             items.add(Item("📝 $nombre", e.diasRestantes, false))
         }
 
+        // Total de pendientes (antes de recortar a 3) para el contador
+        val total = items.size
+
         // Ordenar: vencidas primero, luego por días restantes
         val ordenados = items.sortedWith(
             compareByDescending<Item> { it.vencida }.thenBy { it.dias }
@@ -31,6 +34,7 @@ object WidgetData {
 
         val prefs = context.getSharedPreferences("examplanner_widget", Context.MODE_PRIVATE)
         val editor = prefs.edit()
+        editor.putInt("total", total)
 
         if (ordenados.isEmpty()) {
             editor.putBoolean("vacio", true)
