@@ -1,6 +1,7 @@
 package pe.tecsup.examplanner.ui.asistente
 
 import androidx.compose.foundation.background
+import pe.tecsup.examplanner.ui.theme.AppColors
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -43,18 +44,20 @@ fun AsistenteScreen(viewModel: AsistenteViewModel = viewModel()) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Asistente IA", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("Organización académica", fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.8f))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Azul, titleContentColor = Color.White
+            Box(modifier = Modifier.background(AppColors.HeaderGradient)) {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("Asistente IA", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Organización académica", fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.8f))
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent, titleContentColor = Color.White
+                    )
                 )
-            )
+            }
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).background(Fondo).imePadding()) {

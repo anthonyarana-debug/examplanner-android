@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import pe.tecsup.examplanner.ui.theme.AppColors
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,12 +38,14 @@ fun AcademicoScreen(viewModel: AcademicoViewModel = viewModel()) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Académico", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Azul, titleContentColor = Color.White
+            Box(modifier = Modifier.background(AppColors.HeaderGradient)) {
+                TopAppBar(
+                    title = { Text("Académico", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent, titleContentColor = Color.White
+                    )
                 )
-            )
+            }
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).background(Fondo)) {

@@ -1,6 +1,7 @@
 package pe.tecsup.examplanner.ui.horario
 
 import androidx.compose.foundation.background
+import pe.tecsup.examplanner.ui.theme.AppColors
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,12 +37,14 @@ fun HorarioScreen(viewModel: HorarioViewModel = viewModel()) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Horario", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Azul, titleContentColor = Color.White
+            Box(modifier = Modifier.background(AppColors.HeaderGradient)) {
+                TopAppBar(
+                    title = { Text("Horario", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent, titleContentColor = Color.White
+                    )
                 )
-            )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAdd = true }, containerColor = Azul) {
