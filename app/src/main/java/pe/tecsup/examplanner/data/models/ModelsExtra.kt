@@ -121,6 +121,7 @@ data class AsistenciaCreateRequest(
 data class BloqueResumen(
     val tipo: String,
     val faltas: Int,
+    val presentes: Int = 0,
     val sesiones: Int,
     @SerializedName("duracion_sesion") val duracionSesion: Double,
     @SerializedName("horas_falta") val horasFalta: Double
@@ -133,6 +134,10 @@ data class CursoResumen(
     @SerializedName("porcentaje_inasistencia") val porcentajeInasistencia: Double,
     val riesgo: Boolean,
     @SerializedName("horas_margen") val horasMargen: Double,
+    val presentes: Int = 0,
+    val faltas: Int = 0,
+    val registradas: Int = 0,
+    @SerializedName("sesiones_totales") val sesionesTotales: Int = 0,
     val bloques: List<BloqueResumen> = emptyList()
 )
 

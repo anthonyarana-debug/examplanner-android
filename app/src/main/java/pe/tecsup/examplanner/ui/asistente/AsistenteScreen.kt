@@ -1,6 +1,8 @@
 package pe.tecsup.examplanner.ui.asistente
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -55,7 +57,7 @@ fun AsistenteScreen(viewModel: AsistenteViewModel = viewModel()) {
             )
         }
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).background(Fondo)) {
+        Column(Modifier.fillMaxSize().padding(padding).background(Fondo).imePadding()) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -80,7 +82,7 @@ fun AsistenteScreen(viewModel: AsistenteViewModel = viewModel()) {
                 }
             }
 
-            Surface(shadowElevation = 8.dp, color = Color.White) {
+            Surface(color = Color.White, modifier = Modifier.border(BorderStroke(0.5.dp, Color(0xFFEEEEEE)))) {
                 Row(
                     Modifier.fillMaxWidth().padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -89,9 +91,16 @@ fun AsistenteScreen(viewModel: AsistenteViewModel = viewModel()) {
                         value = texto,
                         onValueChange = { texto = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Escribe tu pregunta…") },
+                        placeholder = { Text("Escribe tu pregunta…", color = Color(0xFF9CA3AF)) },
                         maxLines = 4,
-                        shape = RoundedCornerShape(24.dp)
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Azul,
+                            unfocusedBorderColor = Color(0xFFE5E7EB),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            cursorColor = Azul
+                        )
                     )
                     Spacer(Modifier.width(8.dp))
                     FilledIconButton(

@@ -133,16 +133,61 @@ private fun ResumenCard(c: CursoResumen, umbral: Double) {
                 Text("%.1f%%".format(pct), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = color)
             }
             Spacer(Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { (pct / 100f).toFloat().coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                color = color, trackColor = color.copy(alpha = 0.15f)
-            )
+            // Barra de 3 segmentos: verde (presente) · rojo (falta) · gris (por venir)
+            run {
+                val total = c.sesionesTotales.coerceAtLeast(1)
+                val pPresente = c.presentes.toFloat() / total
+                val pFalta = c.faltas.toFloat() / total
+                val pPendiente = (1f - pPresente - pFalta).coerceAtLeast(0f)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                ) {
+                    if (pPresente > 0f) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .weight(pPresente)
+                                .background(Verde)
+                        )
+                    }
+                    if (pFalta > 0f) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .weight(pFalta)
+                                .background(Rojo)
+                        )
+                    }
+                    if (pPendiente > 0f) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .weight(pPendiente)
+                                .background(Color(0xFFE0E0E0))
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(8.dp))
             Text(
                 "%.1f h faltadas de %.1f h · límite %.0f%%".format(c.horasFalta, c.horasTotales, umbral),
                 fontSize = 12.sp, color = Color(0xFF757575)
             )
+            // Leyenda de la barra: presente · falta · por venir
+            run {
+                val porVenir = (c.sesionesTotales - c.registradas).coerceAtLeast(0)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    LeyendaPunto(Verde, "${c.presentes} presente")
+                    LeyendaPunto(Rojo, "${c.faltas} falta")
+                    LeyendaPunto(Color(0xFFBDBDBD), "$porVenir por venir")
+                }
+            }
             if (c.riesgo) {
                 Text("⚠ En riesgo: superaste el ${umbral.toInt()}% de faltas",
                     fontSize = 12.sp, color = Rojo, fontWeight = FontWeight.SemiBold)
@@ -237,4 +282,18 @@ private fun AddBloqueDialog(
             }
         }
     )
+}
+
+@Composable
+private fun LeyendaPunto(color: Color, texto: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .size(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(color)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(texto, fontSize = 11.sp, color = Color(0xFF757575))
+    }
 }

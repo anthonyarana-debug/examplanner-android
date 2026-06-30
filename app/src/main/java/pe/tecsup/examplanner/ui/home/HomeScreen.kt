@@ -2,9 +2,11 @@ package pe.tecsup.examplanner.ui.home
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,6 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pe.tecsup.examplanner.data.models.Examen
 import pe.tecsup.examplanner.data.models.Tarea
+import pe.tecsup.examplanner.ui.theme.AppColors
+import pe.tecsup.examplanner.ui.theme.entradaAnimada
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +60,7 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
+          Box(modifier = Modifier.background(AppColors.HeaderGradient)) {
             TopAppBar(
                 title = {
                     Column {
@@ -87,11 +92,12 @@ fun HomeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1565C0),
+                    containerColor = Color.Transparent,
                     titleContentColor = Color.White,
                     actionIconContentColor = Color.White
                 )
             )
+          }
         },
         floatingActionButton = {
             Column(
@@ -333,7 +339,8 @@ fun TareasTab(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(tareas, key = { it.id }) { tarea ->
+            itemsIndexed(tareas, key = { _, it -> it.id }) { index, tarea ->
+              Box(Modifier.entradaAnimada(index)) {
                 TareaCard(
                     tarea = tarea,
                     onCompletar = { onCompletar(tarea.id, true) },
@@ -341,6 +348,7 @@ fun TareasTab(
                     onEditar = { onEditar(tarea) },    // ← NUEVO
                     onRepasar = { onRepasar(tarea.nombre, tarea.curso) }
                 )
+              }
             }
         }
     }
@@ -487,11 +495,13 @@ fun ExamenesTab(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(examenes, key = { it.id }) { examen ->
+            itemsIndexed(examenes, key = { _, it -> it.id }) { index, examen ->
+              Box(Modifier.entradaAnimada(index)) {
                 ExamenCard(
                     examen = examen,
                     onRepasar = { onRepasar(examen.descripcion?.takeIf { it.isNotBlank() } ?: "Examen de ${examen.curso}", examen.curso) }
                 )
+              }
             }
         }
     }
