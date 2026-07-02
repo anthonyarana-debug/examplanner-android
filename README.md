@@ -6,7 +6,7 @@ Repositorios:
 - App Android: https://github.com/anthonyarana-debug/examplanner-android
 - Backend: https://github.com/anthonyarana-debug/examplanner-backend
 
-Video demo: https://youtu.be/xSBgdCB2iGk
+Video demo: https://youtu.be/YH826jwBzH0
 
 ## El problema
 
